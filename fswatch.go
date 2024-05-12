@@ -7,7 +7,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -143,6 +143,7 @@ func (this *TriggerEvent) Stop(waitC chan error) bool {
 			this.kcmd = nil
 			return true
 		}
+		// this.kcmd.Terminate(this.killSignal)
 		this.kcmd.Terminate(this.killSignal)
 		var done bool
 		select {
@@ -234,7 +235,7 @@ func fixFWConfig(in FWConfig) (out FWConfig, err error) {
 			outTg.exitSignal = signalMaps[outTg.KillSignal]
 		}
 
-		rd := ioutil.NopCloser(bytes.NewBufferString(strings.Join(outTg.Pattens, "\n")))
+		rd := io.NopCloser(bytes.NewBufferString(strings.Join(outTg.Pattens, "\n")))
 		patterns, er := ignore.ReadIgnore(rd)
 		if er != nil {
 			err = er
@@ -442,7 +443,7 @@ var ErrConfigFileNotExist = errors.New("Config file not exists")
 
 func readFWConfig(paths ...string) (fwc FWConfig, err error) {
 	for _, cfgPath := range paths {
-		data, err := ioutil.ReadFile(cfgPath)
+		data, err := os.ReadFile(cfgPath)
 		if err != nil {
 			continue
 		}
@@ -507,11 +508,11 @@ func initFWConfig() {
 	if strings.ToLower(format) == "json" {
 		data, _ = json.MarshalIndent(fwc, "", "  ")
 		cfg = FWCONFIG_JSON
-		ioutil.WriteFile(FWCONFIG_JSON, data, 0644)
+		os.WriteFile(FWCONFIG_JSON, data, 0644)
 	} else {
 		cfg = FWCONFIG_YAML
 		data, _ = yaml.Marshal(fwc)
-		ioutil.WriteFile(FWCONFIG_YAML, data, 0644)
+		os.WriteFile(FWCONFIG_YAML, data, 0644)
 	}
 	fmt.Printf("Saved to %s\n", strconv.Quote(cfg))
 }
